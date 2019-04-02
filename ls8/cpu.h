@@ -5,7 +5,7 @@
 struct cpu {
   // TODO
   // PC
-  unsigned char *pc = calloc()
+  unsigned char pc;
   // registers (array)
   unsigned char reg[8];
   // ram (array)
