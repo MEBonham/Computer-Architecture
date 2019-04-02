@@ -40,16 +40,16 @@ void cpu_load(struct cpu *cpu)
 /**
  * ALU
  */
-void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB)
-{
-  switch (op) {
-    case ALU_MUL:
-      // TODO
-      break;
+// void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB)
+// {
+//   switch (op) {
+//     case ALU_MUL:
+//       // TODO
+//       break;
 
-    // TODO: implement more ALU ops
-  }
-}
+//     // TODO: implement more ALU ops
+//   }
+// }
 
 /**
  * Run the CPU
@@ -61,11 +61,38 @@ void cpu_run(struct cpu *cpu)
   while (running) {
     // TODO
     // 1. Get the value of the current instruction (in address PC).
+    int instruction = cpu_ram_read(cpu, cpu->pc);
     // 2. Figure out how many operands this next instruction requires
+    int num_operands = instruction >> 6;
     // 3. Get the appropriate value(s) of the operands following this instruction
+    int *operands = malloc(num_operands);
+    for (int i = 0; i < num_operands; i++)
+    {
+      operands[i] = cpu->ram[cpu->pc + 1 + i];
+    }
     // 4. switch() over it to decide on a course of action.
     // 5. Do whatever the instruction should do according to the spec.
+    switch(instruction)
+    {
+      // Binary value 130, LDI instruction
+      case 0b10000010:
+        cpu->reg[operands[0]] = operands[1];
+        break;
+      // Binary value 71, PRINT instruction
+      case 0b01000111:
+        printf("%d", cpu->reg[operands[0]]);
+        break;
+      // Binary value 1, HALT instruction
+      case 0b00000001:
+        running = 0;
+        break;
+      default:
+        printf("That instruction %d was not found.", instruction);
+        exit(1);
+    }
     // 6. Move the PC to the next instruction.
+    cpu->pc += (num_operands + 1);
+    free(operands);
   }
 }
 
