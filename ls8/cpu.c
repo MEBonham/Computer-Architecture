@@ -2,6 +2,17 @@
 
 #define DATA_LEN 6
 
+unsigned char cpu_ram_read(struct cpu *cpu, int index)
+{
+  return cpu->ram[index];
+}
+
+void cpu_ram_write(struct cpu *cpu, int index, unsigned char value)
+{
+  cpu->ram[index] = value;
+  return;
+}
+
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
  */
@@ -64,4 +75,7 @@ void cpu_run(struct cpu *cpu)
 void cpu_init(struct cpu *cpu)
 {
   // TODO: Initialize the PC and other special registers
+  cpu->pc = 0;
+  memset(&(cpu->reg), 0, 8 * sizeof(unsigned char));
+  memset(&(cpu->ram), 0, 256 * sizeof(unsigned char));
 }
