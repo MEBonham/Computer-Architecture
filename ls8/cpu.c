@@ -77,21 +77,21 @@ void cpu_run(struct cpu *cpu)
     // 5. Do whatever the instruction should do according to the spec.
     switch(instruction)
     {
-      // Binary value 130, LDI instruction
-      case 0b10000010:
-        cpu->reg[operands[0]] = operands[1];
-        break;
-      // Binary value 71, PRINT instruction
-      case 0b01000111:
-        printf("%d", cpu->reg[operands[0]]);
-        break;
-      // Binary value 1, HALT instruction
-      case 0b00000001:
-        running = 0;
-        break;
-      default:
-        printf("That instruction %d was not found.", instruction);
-        exit(1);
+    // Binary value 130, LDI instruction
+    case 0b10000010:
+      cpu->reg[operands[0]] = operands[1];
+      break;
+    // Binary value 71, PRINT instruction
+    case 0b01000111:
+      printf("%d\n", cpu->reg[operands[0]]);
+      break;
+    // Binary value 1, HALT instruction
+    case 0b00000001:
+      running = 0;
+      break;
+    default:
+      printf("That instruction %d was not found.", instruction);
+      exit(1);
     }
     // 6. Move the PC to the next instruction.
     cpu->pc += (num_operands + 1);
