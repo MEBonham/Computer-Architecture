@@ -20,7 +20,8 @@ void cpu_ram_write(struct cpu *cpu, int index, unsigned char value)
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
  */
-void cpu_load(struct cpu *cpu, int argc, char *argv[])
+// void cpu_load(struct cpu *cpu, int argc, char *argv[])
+void cpu_load(char *filename, struct cpu *cpu)
 {
   // char data[DATA_LEN] = {
   //   // From print8.ls8
@@ -39,28 +40,27 @@ void cpu_load(struct cpu *cpu, int argc, char *argv[])
   // }
 
   // TODO: Replace this with something less hard-coded
-  if (argc <= 1)
-  {
-    printf("You must provide a filename with instructions.\n");
-    exit(1);
-  }
-  else if (argc > 2)
-  {
-    printf("WARNING: Too many command line elements.\n");
-  }
-  FILE *fp = fopen(argv[1], "r");
+  // if (argc <= 1)
+  // {
+  //   printf("You must provide a filename with instructions.\n");
+  //   exit(1);
+  // }
+  // else if (argc > 2)
+  // {
+  //   printf("WARNING: Too many command line elements.\n");
+  // }
+  FILE *fp = fopen(filename, "r");
   if (fp == NULL)
   {
     printf("Error opening the requested file.\n");
     exit(1);
   }
-  int address = 0;
+  int address = BASE_PROGRAM;
   char *line = NULL;
   size_t len = 0;
   ssize_t read;
   while ((read = getline(&line, &len, fp)) != -1)
   {
-    printf("%s\n", line);
     if (!strcmp(line, "\n"))
     {
       continue;
@@ -73,15 +73,14 @@ void cpu_load(struct cpu *cpu, int argc, char *argv[])
       memcpy(pre_comment, line, diff);
       pre_comment[diff] = '\0';
       line = pre_comment;
-      // linelength = diff;
-    }
-    else
-    {
-      // linelength = strlen(line);
+      printf("%lu\n", strtoul(line, NULL, 2));
     }
     
     // cpu->ram[address++] = strtoul(line, &(line + linelength), 2);
-    cpu->ram[address++] = strtoul(line, NULL, 2);
+    // cpu->ram[address++] = strtoul(line, NULL, 2);
+    cpu_ram_write(cpu, address, strtoul(line, NULL, 2));
+    line = NULL;
+    address++;
   }
 }
 
@@ -105,11 +104,18 @@ void cpu_load(struct cpu *cpu, int argc, char *argv[])
 void cpu_run(struct cpu *cpu)
 {
   int running = 1; // True until we get a HLT instruction
+  cpu->pc = BASE_PROGRAM;
+
+  for (int i = 0; i < 8; i++)
+  {
+    printf("%d\n", cpu_ram_read(cpu, i));
+  }
 
   while (running) {
     // TODO
     // 1. Get the value of the current instruction (in address PC).
     int instruction = cpu_ram_read(cpu, cpu->pc);
+    printf("%d\n", instruction);
     // 2. Figure out how many operands this next instruction requires
     int num_operands = instruction >> 6;
     // 3. Get the appropriate value(s) of the operands following this instruction
@@ -140,7 +146,7 @@ void cpu_run(struct cpu *cpu)
       break;
     // Other value, no matching instruction found
     default:
-      printf("That instruction %d was not found.", instruction);
+      printf("That instruction %d was not found.\n", instruction);
       exit(1);
     }
     // 6. Move the PC to the next instruction.
