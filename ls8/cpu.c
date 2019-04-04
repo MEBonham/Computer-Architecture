@@ -41,31 +41,31 @@ void cpu_load(struct cpu *cpu, int argc, char *argv[])
   // TODO: Replace this with something less hard-coded
   if (argc <= 1)
   {
-    printf("You must provide a filename with instructions.");
+    printf("You must provide a filename with instructions.\n");
     exit(1);
   }
   else if (argc > 2)
   {
-    printf("WARNING: Too many command line elements.");
+    printf("WARNING: Too many command line elements.\n");
   }
   FILE *fp = fopen(argv[1], "r");
   if (fp == NULL)
   {
-    printf("Error opening the requested file.");
+    printf("Error opening the requested file.\n");
     exit(1);
   }
-
   int address = 0;
   char *line = NULL;
   size_t len = 0;
   ssize_t read;
   while ((read = getline(&line, &len, fp)) != -1)
   {
+    printf("%s\n", line);
     if (!strcmp(line, "\n"))
     {
       continue;
     }
-    int linelength;
+    // int linelength;
     if (strstr(line, "#") != NULL)
     {
       int diff = strstr(line, "#") - line;
@@ -73,14 +73,15 @@ void cpu_load(struct cpu *cpu, int argc, char *argv[])
       memcpy(pre_comment, line, diff);
       pre_comment[diff] = '\0';
       line = pre_comment;
-      linelength = diff;
+      // linelength = diff;
     }
     else
     {
-      linelength = strlen(line);
+      // linelength = strlen(line);
     }
     
-    cpu->ram[address++] = strtoul(line, &(line + linelength), 2);
+    // cpu->ram[address++] = strtoul(line, &(line + linelength), 2);
+    cpu->ram[address++] = strtoul(line, NULL, 2);
   }
 }
 
