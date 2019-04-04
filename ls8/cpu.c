@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #define DATA_LEN 6
 
@@ -19,25 +20,68 @@ void cpu_ram_write(struct cpu *cpu, int index, unsigned char value)
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
  */
-void cpu_load(struct cpu *cpu)
+void cpu_load(struct cpu *cpu, int argc, char *argv[])
 {
-  char data[DATA_LEN] = {
-    // From print8.ls8
-    0b10000010, // LDI R0,8
-    0b00000000,
-    0b00001000,
-    0b01000111, // PRN R0
-    0b00000000,
-    0b00000001  // HLT
-  };
+  // char data[DATA_LEN] = {
+  //   // From print8.ls8
+  //   0b10000010, // LDI R0,8
+  //   0b00000000,
+  //   0b00001000,
+  //   0b01000111, // PRN R0
+  //   0b00000000,
+  //   0b00000001  // HLT
+  // };
 
-  int address = 0;
+  // int address = 0;
 
-  for (int i = 0; i < DATA_LEN; i++) {
-    cpu->ram[address++] = data[i];
-  }
+  // for (int i = 0; i < DATA_LEN; i++) {
+  //   cpu->ram[address++] = data[i];
+  // }
 
   // TODO: Replace this with something less hard-coded
+  if (argc <= 1)
+  {
+    printf("You must provide a filename with instructions.");
+    exit(1);
+  }
+  else if (argc > 2)
+  {
+    printf("WARNING: Too many command line elements.");
+  }
+  FILE *fp = fopen(argv[1], "r");
+  if (fp == NULL)
+  {
+    printf("Error opening the requested file.");
+    exit(1);
+  }
+
+  int address = 0;
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t read;
+  while ((read = getline(&line, &len, fp)) != -1)
+  {
+    if (!strcmp(line, "\n"))
+    {
+      continue;
+    }
+    int linelength;
+    if (strstr(line, "#") != NULL)
+    {
+      int diff = strstr(line, "#") - line;
+      char pre_comment[diff + 1];
+      memcpy(pre_comment, line, diff);
+      pre_comment[diff] = '\0';
+      line = pre_comment;
+      linelength = diff;
+    }
+    else
+    {
+      linelength = strlen(line);
+    }
+    
+    cpu->ram[address++] = strtoul(line, &(line + linelength), 2);
+  }
 }
 
 /**
@@ -89,6 +133,11 @@ void cpu_run(struct cpu *cpu)
     case 0b00000001:
       running = 0;
       break;
+    // Binary value 162, multiply
+    case 0b10100010:
+      cpu->reg[operands[0]] = cpu->reg[operands[0]] * cpu->reg[operands[1]];
+      break;
+    // Other value, no matching instruction found
     default:
       printf("That instruction %d was not found.", instruction);
       exit(1);
