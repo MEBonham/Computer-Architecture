@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #define DATA_LEN 6
 
@@ -15,6 +16,17 @@ void cpu_ram_write(struct cpu *cpu, int index, unsigned char value)
 {
   cpu->ram[index] = value;
   return;
+}
+
+int is_whitespace(const char *str)
+{
+  while (*str != '\0')
+  {
+    if (!isspace((unsigned char) *str))
+      return 0;
+    str++;
+  }
+  return 1;
 }
 
 /**
@@ -62,7 +74,7 @@ void cpu_load(char *filename, struct cpu *cpu)
   unsigned char num;
   while ((read = getline(&line, &len, fp)) != -1)
   {
-    if (!strcmp(line, "\n"))
+    if (is_whitespace(line))
     {
       continue;
     }
@@ -70,6 +82,10 @@ void cpu_load(char *filename, struct cpu *cpu)
     if (strstr(line, "#") != NULL)
     {
       int diff = strstr(line, "#") - line;
+      if (diff == 0)
+      {
+        continue;
+      }
       char pre_comment[diff + 1];
       memcpy(pre_comment, line, diff);
       pre_comment[diff] = '\0';
@@ -81,7 +97,6 @@ void cpu_load(char *filename, struct cpu *cpu)
     {
       num = strtoul(line, NULL, 2);
     }
-    
     
     // unsigned char num = strtoul(line, NULL, 2);
     // printf("%d\n", num);
@@ -122,7 +137,7 @@ void cpu_run(struct cpu *cpu)
     // TODO
     // 1. Get the value of the current instruction (in address PC).
     int instruction = cpu_ram_read(cpu, cpu->pc);
-    // printf("%d\n", instruction);
+    // printf("Instruction: %d\n", instruction);
     // 2. Figure out how many operands this next instruction requires
     int num_operands = instruction >> 6;
     // 3. Get the appropriate value(s) of the operands following this instruction
@@ -179,12 +194,16 @@ void cpu_run(struct cpu *cpu)
     // Binary value 84, JMP instruction
     case 0b01010100:
       cpu->pc = cpu->reg[operands[0]];
+      // Compensate for increment of pc that is about to happen after this instruction:
+      cpu->pc -= 2;
       break;
     // Binary value 85, JMP-if-equal instruction
     case 0b01010101:
       if (cpu->flags & 0b00000001)
       {
         cpu->pc = cpu->reg[operands[0]];
+        // Compensate for increment of pc that is about to happen after this instruction:
+        cpu->pc -= 2;
       }
       break;
     // Binary value 86, JMP-if-not-equal instruction
@@ -192,6 +211,8 @@ void cpu_run(struct cpu *cpu)
       if (!(cpu->flags & 0b00000001))
       {
         cpu->pc = cpu->reg[operands[0]];
+        // Compensate for increment of pc that is about to happen after this instruction:
+        cpu->pc -= 2;
       }
       break;
     // Other value, no matching instruction found
