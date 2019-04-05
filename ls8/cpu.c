@@ -187,6 +187,13 @@ void cpu_run(struct cpu *cpu)
         cpu->pc = cpu->reg[operands[0]];
       }
       break;
+    // Binary value 86, JMP-if-not-equal instruction
+    case 0b01010110:
+      if (!(cpu->flags & 0b00000001))
+      {
+        cpu->pc = cpu->reg[operands[0]];
+      }
+      break;
     // Other value, no matching instruction found
     default:
       printf("That instruction %d was not found.\n", instruction);
