@@ -165,9 +165,15 @@ void cpu_run(struct cpu *cpu)
     case 0b10100111:
       if (cpu->reg[operands[0]] == cpu->reg[operands[1]])
       {
-        cpu->equal_flag = 1;
-        cpu->less_than_flag = 0;
-
+        cpu->flags = 0b00000001;
+      }
+      else if (cpu->reg[operands[0]] < cpu->reg[operands[1]])
+      {
+        cpu->flags = 0b00000100;
+      }
+      else
+      {
+        cpu->flags = 0b00000010;
       }
     // Other value, no matching instruction found
     default:
