@@ -10,10 +10,8 @@ struct cpu {
   unsigned char reg[8];
   // ram (array)
   unsigned char ram[256];
-  // flags
-  unsigned char equal_flag;
-  unsigned char less_than_flag;
-  unsigned char greater_than_flag;
+  // flags register
+  unsigned char flags;
 };
 
 // ALU operations

@@ -161,6 +161,14 @@ void cpu_run(struct cpu *cpu)
       cpu->reg[operands[0]] = cpu_ram_read(cpu, cpu->reg[STACK_POINTER]);
       cpu->reg[STACK_POINTER] += 1;
       break;
+    // Binary value 167, Compare two registers
+    case 0b10100111:
+      if (cpu->reg[operands[0]] == cpu->reg[operands[1]])
+      {
+        cpu->equal_flag = 1;
+        cpu->less_than_flag = 0;
+
+      }
     // Other value, no matching instruction found
     default:
       printf("That instruction %d was not found.\n", instruction);
@@ -181,8 +189,6 @@ void cpu_init(struct cpu *cpu)
   cpu->pc = 0;
   memset(&(cpu->reg), 0, 8 * sizeof(unsigned char));
   memset(&(cpu->ram), 0, 256 * sizeof(unsigned char));
-  cpu->equal_flag = 0;
-  cpu->less_than_flag = 0;
-  cpu->greater_than_flag = 0;
+  cpu->flags = 0x00;
   cpu->reg[STACK_POINTER] = STACK_HIGH;
 }
