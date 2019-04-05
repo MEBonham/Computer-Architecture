@@ -10,6 +10,10 @@ struct cpu {
   unsigned char reg[8];
   // ram (array)
   unsigned char ram[256];
+  // flags
+  unsigned char equal_flag;
+  unsigned char less_than_flag;
+  unsigned char greater_than_flag;
 };
 
 // ALU operations
@@ -30,6 +34,8 @@ enum alu_op {
 
 // Memory locations
 #define BASE_PROGRAM 0x00
+#define STACK_POINTER 7
+#define STACK_HIGH 0xf4
 
 // Function declarations
 
