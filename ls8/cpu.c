@@ -175,6 +175,11 @@ void cpu_run(struct cpu *cpu)
       {
         cpu->flags = 0b00000010;
       }
+      break;
+    // Binary value 84, JMP instruction
+    case 0b01010100:
+      cpu->pc = cpu->reg[operands[0]];
+      break;
     // Other value, no matching instruction found
     default:
       printf("That instruction %d was not found.\n", instruction);
