@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #define DATA_LEN 6
 
@@ -15,6 +16,17 @@ void cpu_ram_write(struct cpu *cpu, int index, unsigned char value)
 {
   cpu->ram[index] = value;
   return;
+}
+
+int is_whitespace(const char *str)
+{
+  while (*str != '\0')
+  {
+    if (!isspace((unsigned char) *str))
+      return 0;
+    str++;
+  }
+  return 1;
 }
 
 /**
@@ -59,9 +71,10 @@ void cpu_load(char *filename, struct cpu *cpu)
   char *line = NULL;
   size_t len = 0;
   ssize_t read;
+  unsigned char num;
   while ((read = getline(&line, &len, fp)) != -1)
   {
-    if (!strcmp(line, "\n"))
+    if (is_whitespace(line))
     {
       continue;
     }
@@ -69,16 +82,25 @@ void cpu_load(char *filename, struct cpu *cpu)
     if (strstr(line, "#") != NULL)
     {
       int diff = strstr(line, "#") - line;
+      if (diff == 0)
+      {
+        continue;
+      }
       char pre_comment[diff + 1];
       memcpy(pre_comment, line, diff);
       pre_comment[diff] = '\0';
       line = pre_comment;
-      printf("%lu\n", strtoul(line, NULL, 2));
+      // printf("%lu\n", strtoul(line, NULL, 2));
+      num = strtoul(line, NULL, 2);
+    }
+    else
+    {
+      num = strtoul(line, NULL, 2);
     }
     
-    // cpu->ram[address++] = strtoul(line, &(line + linelength), 2);
-    // cpu->ram[address++] = strtoul(line, NULL, 2);
-    cpu_ram_write(cpu, address, strtoul(line, NULL, 2));
+    // unsigned char num = strtoul(line, NULL, 2);
+    // printf("%d\n", num);
+    cpu_ram_write(cpu, address, num);
     line = NULL;
     address++;
   }
@@ -106,16 +128,16 @@ void cpu_run(struct cpu *cpu)
   int running = 1; // True until we get a HLT instruction
   cpu->pc = BASE_PROGRAM;
 
-  for (int i = 0; i < 8; i++)
-  {
-    printf("%d\n", cpu_ram_read(cpu, i));
-  }
+  // for (int i = 0; i < 8; i++)
+  // {
+  //   printf("%d\n", cpu_ram_read(cpu, i));
+  // }
 
   while (running) {
     // TODO
     // 1. Get the value of the current instruction (in address PC).
     int instruction = cpu_ram_read(cpu, cpu->pc);
-    printf("%d\n", instruction);
+    // printf("Instruction: %d\n", instruction);
     // 2. Figure out how many operands this next instruction requires
     int num_operands = instruction >> 6;
     // 3. Get the appropriate value(s) of the operands following this instruction
@@ -144,6 +166,55 @@ void cpu_run(struct cpu *cpu)
     case 0b10100010:
       cpu->reg[operands[0]] = cpu->reg[operands[0]] * cpu->reg[operands[1]];
       break;
+    // Binary value 69, Push to the Stack
+    case 0b01000101:
+      cpu->reg[STACK_POINTER] -= 1;
+      cpu_ram_write(cpu, cpu->reg[STACK_POINTER], cpu->reg[operands[0]]);
+      break;
+    // Binary value 70, Pop from the Stack
+    case 0b01000110:
+      cpu->reg[operands[0]] = cpu_ram_read(cpu, cpu->reg[STACK_POINTER]);
+      cpu->reg[STACK_POINTER] += 1;
+      break;
+    // Binary value 167, Compare two registers
+    case 0b10100111:
+      if (cpu->reg[operands[0]] == cpu->reg[operands[1]])
+      {
+        cpu->flags = 0b00000001;
+      }
+      else if (cpu->reg[operands[0]] < cpu->reg[operands[1]])
+      {
+        cpu->flags = 0b00000100;
+      }
+      else
+      {
+        cpu->flags = 0b00000010;
+      }
+      break;
+    // Binary value 84, JMP instruction
+    case 0b01010100:
+      cpu->pc = cpu->reg[operands[0]];
+      // Compensate for increment of pc that is about to happen after this instruction:
+      cpu->pc -= 2;
+      break;
+    // Binary value 85, JMP-if-equal instruction
+    case 0b01010101:
+      if (cpu->flags & 0b00000001)
+      {
+        cpu->pc = cpu->reg[operands[0]];
+        // Compensate for increment of pc that is about to happen after this instruction:
+        cpu->pc -= 2;
+      }
+      break;
+    // Binary value 86, JMP-if-not-equal instruction
+    case 0b01010110:
+      if (!(cpu->flags & 0b00000001))
+      {
+        cpu->pc = cpu->reg[operands[0]];
+        // Compensate for increment of pc that is about to happen after this instruction:
+        cpu->pc -= 2;
+      }
+      break;
     // Other value, no matching instruction found
     default:
       printf("That instruction %d was not found.\n", instruction);
@@ -164,4 +235,6 @@ void cpu_init(struct cpu *cpu)
   cpu->pc = 0;
   memset(&(cpu->reg), 0, 8 * sizeof(unsigned char));
   memset(&(cpu->ram), 0, 256 * sizeof(unsigned char));
+  cpu->flags = 0x00;
+  cpu->reg[STACK_POINTER] = STACK_HIGH;
 }
